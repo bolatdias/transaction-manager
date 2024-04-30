@@ -19,7 +19,6 @@ public class MapperTest {
         // Arrange
         CurrencyConversionDTO currencyConversionDTO = new CurrencyConversionDTO();
         currencyConversionDTO.setSymbol("USD");
-        currencyConversionDTO.setTimestamp(System.currentTimeMillis());
         currencyConversionDTO.setRate(BigDecimal.valueOf(1.0));
 
         // Act
@@ -27,7 +26,6 @@ public class MapperTest {
 
         // Assert
         assertEquals(currencyConversionDTO.getSymbol(), currency.getSymbol());
-        assertEquals(new Date(currencyConversionDTO.getTimestamp()), currency.getExchangeDate());
         assertEquals(currencyConversionDTO.getRate(), currency.getCloseExchange());
     }
 

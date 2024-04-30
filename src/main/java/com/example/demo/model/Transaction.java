@@ -1,14 +1,14 @@
 package com.example.demo.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
 
 @Entity
@@ -18,7 +18,21 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime date;
-    private BigDecimal amount;
-    private boolean limit_exceeded;
+    @ManyToOne
+    @JoinColumn(name = "currency_id", nullable = false)
+    private Currency currency;
+
+    private Long accountFrom;
+    private Long accountTo;
+    private BigDecimal sum;
+    @Enumerated(EnumType.STRING)
+    private LimitType expenseCategory;
+    private OffsetDateTime datetime;
+
+
+    @ManyToOne
+    @JoinColumn(name = "limit_id", nullable = false)
+    private Limit limit;
+
+    private boolean limitExceeded;
 }

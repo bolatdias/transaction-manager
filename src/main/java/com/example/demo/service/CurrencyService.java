@@ -4,7 +4,6 @@ package com.example.demo.service;
 import com.example.demo.mapper.CurrencyMapper;
 import com.example.demo.model.Currency;
 import com.example.demo.payload.CurrencyConversionDTO;
-import com.example.demo.payload.CurrencyConversionInputDTO;
 import com.example.demo.proxy.CurrencyProxy;
 import com.example.demo.repository.CurrencyRepository;
 import com.example.demo.utils.AppConst;
@@ -12,15 +11,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
 
 @Service
 @RequiredArgsConstructor
 public class CurrencyService {
-    private static final Logger logger = Logger.getLogger(CurrencyService.class.getName());
     @Value("${app.service.apiKey}")
     private String apiKey;
 
@@ -29,49 +29,60 @@ public class CurrencyService {
     private final CurrencyMapper currencyMapper;
 
 
-    public CurrencyConversionDTO getExchangeRate(CurrencyConversionInputDTO input) {
-        CurrencyConversionDTO currencyConversionDTO = currencyProxy.getExchangeRate(apiKey, input.getSymbol());
-        Currency currency = currencyMapper.conversionDTOToCurrency(currencyConversionDTO);
-//        currencyRepository.save(currency);
+    public void parseCurrencyApi() {
+        HashMap<String, Currency> currHashMap = initHashMap();
+        List<String> parseStrings = AppConst.OTHER_CURRENCY;
 
-        return currencyConversionDTO;
+
+        for (String parseString : parseStrings) {
+            String symbol = AppConst.BASE_CURRENCY + "/" + parseString;
+            CurrencyConversionDTO currencyDTO = getExchangeRateApi(symbol);
+
+
+            insertCurrency(currHashMap, parseString, currencyDTO);
+        }
     }
 
-    public void parseCurrency() {
+    public void insertCurrency(HashMap<String, Currency> currHashMap, String symbol, CurrencyConversionDTO currencyDTO) {
+
+        Currency currency;
+
+        if (currHashMap.containsKey(symbol)) {
+            currency = currHashMap.get(symbol);
+            currency.setPreviousCloseExchange(currency.getCloseExchange());
+            currency.setCloseExchange(currency.getCloseExchange());
+            currency.setExchangeDate(OffsetDateTime.now());
+
+        } else {
+            currency = currencyMapper.conversionDTOToCurrency(currencyDTO);
+            currency.setSymbol(symbol);
+        }
+        currencyRepository.save(currency);
+
+    }
+
+
+    private HashMap<String, Currency> initHashMap() {
         HashMap<String, Currency> currenciesWithDate = new HashMap<>();
         List<Currency> currencyList = currencyRepository.findAll();
         for (Currency currency : currencyList) {
             currenciesWithDate.put(currency.getSymbol(), currency);
         }
-
-
-        List<String> parseCurrencyStrings = AppConst.OTHER_CURRENCY;
-        for (String parseCurrencyString : parseCurrencyStrings) {
-            String symbol = parseCurrencyString + "/" + AppConst.BASE_CURRENCY;
-            CurrencyConversionDTO currencyDTO = getExchangeRate(symbol);
-
-
-            if (currenciesWithDate.containsKey(symbol)) {
-                Currency currency = currenciesWithDate.get(symbol);
-                currency.setPreviousCloseExchange(currency.getCloseExchange());
-                currency.setCloseExchange(currency.getCloseExchange());
-                currency.setExchangeDate(new Date());
-                currencyRepository.save(currency);
-
-            } else {
-                Currency currency = new Currency();
-                currency.setSymbol(currencyDTO.getSymbol());
-                currency.setExchangeDate(new Date());
-                currency.setCloseExchange(currencyDTO.getRate());
-                currency.setPreviousCloseExchange(currencyDTO.getRate());
-                currencyRepository.save(currency);
-            }
-
-        }
+        return currenciesWithDate;
     }
 
-    private CurrencyConversionDTO getExchangeRate(String symbol) {
+    private CurrencyConversionDTO getExchangeRateApi(String symbol) {
         return currencyProxy.getExchangeRate(apiKey, symbol);
     }
 
+
+    public Currency getCurrencyBySymbol(String s) {
+        Currency currency = currencyRepository.findBySymbol(s).orElseThrow(
+                () -> new RuntimeException("Currency not found")
+        );
+
+        return currency;
+    }
+
 }
+

@@ -6,7 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.List;
 
 
 @Entity
@@ -19,12 +23,9 @@ public class Currency {
     private Long id;
     private String symbol;
 
-    @Column(precision = 19, scale = 8)
+
     private BigDecimal closeExchange;
-
-    @Column(precision = 19, scale = 8)
     private BigDecimal previousCloseExchange;
-
-    private Date exchangeDate;
+    private OffsetDateTime exchangeDate;
 
 }
