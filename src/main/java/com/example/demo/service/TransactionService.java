@@ -31,10 +31,9 @@ public class TransactionService {
 
     @Transactional
     public void addTransaction(TransactionRequestDTO requestDTO, Currency currency) {
+        Limit limit = limitService.getLimit(requestDTO.getType(), requestDTO.getDatetime());
         Transaction transaction = TransactionMapper.INSTANCE.convertDTOtoModel(requestDTO);
         transaction.setCurrency(currency);
-
-        Limit limit = limitService.getLimit(requestDTO.getType(), requestDTO.getDatetime());
 
         transaction.setLimit(limit);
         transactionRepository.save(transaction);
@@ -49,15 +48,16 @@ public class TransactionService {
         return responseDTOS;
     }
 
+
     public List<TransactionResponseDTO> getExceededTransactionsByType(LimitType limitType) {
         List<TransactionResponseDTO> responseDTOs = new ArrayList<>();
-
         List<Transaction> list = transactionRepository.findAllByLimitType(limitType, Sort.by("datetime"));
-        if(list.isEmpty()) {
+
+        if (list.isEmpty()) {
             return responseDTOs;
         }
-        OffsetDateTime now = OffsetDateTime.now();
 
+        OffsetDateTime now = OffsetDateTime.now();
         HashMap<Limit, OffsetDateTime> limitsLastRefreshTime = new HashMap<>();
         HashMap<Currency, BigDecimal> currenciesWithRate = new HashMap<>();
 
@@ -65,10 +65,8 @@ public class TransactionService {
         BigDecimal value = list.get(0).getLimit().getLimitValue();
         BigDecimal remainValue = new BigDecimal(String.valueOf(value));
 
-
         for (Transaction transaction : list) {
             Limit limit = transaction.getLimit();
-
             limitsLastRefreshTime.put(limit, limit.getCreatedDate());
 
             Currency currency = transaction.getCurrency();
@@ -80,28 +78,29 @@ public class TransactionService {
 
 
             BigDecimal rate = currenciesWithRate.get(currency);
-
             BigDecimal currValue = limit.getLimitValue();
-            if (value.compareTo(currValue) != 0) {
 
+            if (value.compareTo(currValue) != 0) {
                 remainValue = remainValue.add(currValue.subtract(value));
                 value = currValue;
             }
 
             OffsetDateTime lastRefreshedTime = limitsLastRefreshTime.get(limit);
-            if (limitService.validateByMonth(limit, lastRefreshedTime, now)) {
-                limitsLastRefreshTime.put(limit, now);
-                remainValue = remainValue.add(currValue);
-            }
 
-            remainValue = remainValue.subtract(transaction.getSum().divide(rate, 2, BigDecimal.ROUND_HALF_UP));
+//            if (!limitService.isMonthEqual(lastRefreshedTime, now)) {
+//                limitsLastRefreshTime.put(limit, now);
+//                remainValue = currValue;
+//            }
+
+            remainValue = remainValue.subtract(transaction.getSum().divide(rate, 2, BigDecimal.ROUND_HALF_DOWN));
 
 
             if (remainValue.compareTo(BigDecimal.ZERO) < 0) {
                 responseDTOs.add(TransactionMapper.INSTANCE.convertModelToDTO(transaction));
             }
 
-            logger.info(value + " " + currValue + " " + remainValue + " " + rate);
+
+            logger.info(currValue + " " + value + " " + remainValue);
 
         }
 

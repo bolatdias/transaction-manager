@@ -27,7 +27,7 @@ public class LimitServiceTest {
 
 
     @Test
-    public void testValidateByMonth_True() {
+    public void testIsMonth_Equal_True() {
         OffsetDateTime lastRefreshDate = OffsetDateTime.now().minus(1, ChronoUnit.MONTHS);
         Limit limit = new Limit();
 
@@ -35,22 +35,32 @@ public class LimitServiceTest {
 
 
 
-        boolean result = limitService.validateByMonth(limit, lastRefreshDate, now);
+        boolean result = limitService.isMonthEqual(lastRefreshDate, now);
+
+        assertEquals(false, result);
+    }
+
+    @Test
+    public void testIsMonth_Equal_False() {
+        OffsetDateTime lastRefreshDate = OffsetDateTime.now().minus(1, ChronoUnit.HOURS); // Less than a month ago
+        OffsetDateTime now = OffsetDateTime.now();
+
+
+
+        boolean result = limitService.isMonthEqual(lastRefreshDate,now);
 
         assertEquals(true, result);
     }
 
     @Test
-    public void testValidateByMonth_False() {
-        OffsetDateTime lastRefreshDate = OffsetDateTime.now().minus(1, ChronoUnit.HOURS); // Less than a month ago
-        Limit limit = new Limit();
-
+    public void testValidateByYear_MonthEqual() {
+        OffsetDateTime lastRefreshDate = OffsetDateTime.now().minus(12, ChronoUnit.MONTHS); // Less than a month ago
         OffsetDateTime now = OffsetDateTime.now();
 
 
 
-        boolean result = limitService.validateByMonth(limit, lastRefreshDate,now);
-
+        boolean result = limitService.isMonthEqual(lastRefreshDate,now);
         assertEquals(false, result);
     }
+
 }

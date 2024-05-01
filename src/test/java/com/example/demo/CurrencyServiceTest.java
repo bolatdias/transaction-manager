@@ -13,8 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -56,28 +54,25 @@ public class CurrencyServiceTest {
 
     @Test
     void testInsertCurrency() {
-
-        HashMap<String, Currency> currHashMap = new HashMap<>();
         String symbol = "EUR";
         CurrencyConversionDTO currencyDTO = new CurrencyConversionDTO();
         currencyDTO.setRate(new BigDecimal("1.2"));
 
-        currencyService.insertCurrency(currHashMap, symbol, currencyDTO);
+        currencyService.insertCurrency(currencyDTO, symbol);
         verify(currencyRepository, times(1)).save(any());
     }
-
 
 
     @Test
     void testParseCurrencyApi() {
         // Mock data
-        List<String> parseStrings = Arrays.asList("EUR", "GBP");
+        Set<String> parseStrings = new HashSet<>(Arrays.asList("EUR", "GBP"));
         CurrencyConversionDTO conversionDTO = new CurrencyConversionDTO();
         conversionDTO.setRate(new BigDecimal("1.2"));
 
         // Stubbing
         when(currencyProxy.getExchangeRate(anyString(), anyString())).thenReturn(conversionDTO);
-        when(currencyRepository.findAll()).thenReturn(new ArrayList<>());
+
 
         // Test
         currencyService.parseCurrencyApi(parseStrings);
@@ -86,7 +81,6 @@ public class CurrencyServiceTest {
         verify(currencyProxy, times(2)).getExchangeRate(anyString(), anyString());
         verify(currencyRepository, times(2)).save(any());
     }
-
 
 
 }

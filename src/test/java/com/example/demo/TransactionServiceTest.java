@@ -228,7 +228,6 @@ public class TransactionServiceTest {
 
 
 
-
         List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
 
 
@@ -305,6 +304,36 @@ public class TransactionServiceTest {
         assertEquals(2, result.size()); // Assuming two transactions exceed the limit
         assertEquals("2022-01-03T00:00Z", result.get(0).getDatetime().toString()); // First transaction should exceed the limit
         assertEquals("2022-01-13T01:00Z", result.get(1).getDatetime().toString()); // Second transaction should exceed the limit
+    }
+
+    @Test
+    public void testGetExceededTransactions_withMounths() {
+        Currency currency = new Currency();
+        currency.setId(1L);
+        currency.setSymbol("USD");
+        currency.setCloseExchange(new BigDecimal("1.0"));
+        currency.setPreviousCloseExchange(new BigDecimal("0.9"));
+        currency.setExchangeDate(OffsetDateTime.now());
+
+        Limit limit1 = createLimit(new BigDecimal("1000"), "2022-01-01T00:00:00Z");
+
+        // Mock data for Transactions
+        Transaction transaction1 = createTransaction(1L,currency, limit1, "2022-01-02T00:00:00Z", new BigDecimal("500"));
+        Transaction transaction2 = createTransaction(2L,currency, limit1, "2022-01-03T00:00:00Z", new BigDecimal("600"));
+        Transaction transaction3 = createTransaction(3L,currency, limit1, "2022-02-11T00:00:00Z", new BigDecimal("400"));
+        Transaction transaction4 = createTransaction(4L,currency, limit1, "2022-03-12T00:00:00Z", new BigDecimal("700"));
+
+
+        List<Transaction> sortedList = Arrays.asList(
+                transaction1, transaction2, transaction3, transaction4);
+
+        when(transactionRepository.findAllByLimitType(any(), any(Sort.class))).thenReturn(sortedList);
+        List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
+
+
+        // Assertions
+        assertEquals(1, result.size()); // Assuming two transactions exceed the limit
+        assertEquals("2022-01-03T00:00Z", result.get(0).getDatetime().toString()); // First transaction should exceed the limit// Second transaction should exceed the limit
     }
 
 }

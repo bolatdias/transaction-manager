@@ -2,7 +2,7 @@ package com.example.demo;
 
 import com.example.demo.mapper.LimitMapper;
 import com.example.demo.model.Limit;
-import com.example.demo.payload.LimitSetRequest;
+import com.example.demo.payload.LimitSetRequestDTO;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -14,7 +14,7 @@ public class LimitMapperTest {
     @Test
     public void testLimitSetRequestToLimit() {
 
-        LimitSetRequest request = new LimitSetRequest();
+        LimitSetRequestDTO request = new LimitSetRequestDTO();
         request.setLimit(BigDecimal.valueOf(100));
 
 

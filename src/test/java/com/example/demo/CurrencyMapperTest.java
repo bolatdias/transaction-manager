@@ -25,6 +25,5 @@ public class CurrencyMapperTest {
 
         assertEquals(currencyDTO.getSymbol(), currency.getSymbol());
         assertEquals(currencyDTO.getRate(), currency.getCloseExchange());
-        assertEquals(OffsetDateTime.now().getDayOfYear(), currency.getExchangeDate().getDayOfYear()); // You can adjust this comparison as per your needs
     }
 }

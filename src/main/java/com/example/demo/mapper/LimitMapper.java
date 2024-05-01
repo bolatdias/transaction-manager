@@ -2,7 +2,7 @@ package com.example.demo.mapper;
 
 
 import com.example.demo.model.Limit;
-import com.example.demo.payload.LimitSetRequest;
+import com.example.demo.payload.LimitSetRequestDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -12,5 +12,5 @@ public interface LimitMapper {
     LimitMapper INSTANCE = Mappers.getMapper( LimitMapper.class );
 
     @Mapping(source = "limit", target = "limitValue")
-    Limit limitSetRequestToLimit(LimitSetRequest request);
+    Limit limitSetRequestToLimit(LimitSetRequestDTO request);
 }
