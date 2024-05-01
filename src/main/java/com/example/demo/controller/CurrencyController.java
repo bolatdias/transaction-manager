@@ -3,6 +3,7 @@ package com.example.demo.controller;
 
 import com.example.demo.payload.ApiResponse;
 import com.example.demo.service.CurrencyService;
+import com.example.demo.utils.AppConst;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +18,7 @@ public class CurrencyController {
 
     @GetMapping("/currency")
     public ResponseEntity<ApiResponse> parseCurrency() {
-        currencyService.parseCurrencyApi();
+        currencyService.parseCurrencyApi(AppConst.OTHER_CURRENCY);
         return ResponseEntity.ok()
                 .body(new ApiResponse("Currency parsing has successfully", true));
     }

@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
-@Data
+
 public class TransactionRequestDTO {
     @JsonProperty("account_from")
     private Long accountFrom;
@@ -19,6 +19,55 @@ public class TransactionRequestDTO {
     private Long accountTo;
     @JsonProperty("currency_shortname")
     private String currencyShortname;
+
+    public Long getAccountFrom() {
+        return accountFrom;
+    }
+
+    public void setAccountFrom(Long accountFrom) {
+        this.accountFrom = accountFrom;
+    }
+
+    public Long getAccountTo() {
+        return accountTo;
+    }
+
+    public void setAccountTo(Long accountTo) {
+        this.accountTo = accountTo;
+    }
+
+    public String getCurrencyShortname() {
+        return currencyShortname;
+    }
+
+    public void setCurrencyShortname(String currencyShortname) {
+        this.currencyShortname = currencyShortname;
+    }
+
+    public BigDecimal getSum() {
+        return sum;
+    }
+
+    public void setSum(BigDecimal sum) {
+        this.sum = sum;
+    }
+
+    public LimitType getType() {
+        return type;
+    }
+
+    public void setType(LimitType type) {
+        this.type = type;
+    }
+
+    public OffsetDateTime getDatetime() {
+        return datetime;
+    }
+
+    public void setDatetime(OffsetDateTime datetime) {
+        this.datetime = datetime;
+    }
+
     private BigDecimal sum;
     @JsonProperty("expense_category")
     private LimitType type;

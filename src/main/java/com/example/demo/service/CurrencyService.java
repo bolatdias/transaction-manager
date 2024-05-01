@@ -11,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,12 +23,10 @@ public class CurrencyService {
 
     private final CurrencyProxy currencyProxy;
     private final CurrencyRepository currencyRepository;
-    private final CurrencyMapper currencyMapper;
 
 
-    public void parseCurrencyApi() {
+    public void parseCurrencyApi(List<String> parseStrings) {
         HashMap<String, Currency> currHashMap = initHashMap();
-        List<String> parseStrings = AppConst.OTHER_CURRENCY;
 
 
         for (String parseString : parseStrings) {
@@ -54,7 +49,7 @@ public class CurrencyService {
             currency.setExchangeDate(OffsetDateTime.now());
 
         } else {
-            currency = currencyMapper.conversionDTOToCurrency(currencyDTO);
+            currency = CurrencyMapper.INSTANCE.conversionDTOToCurrency(currencyDTO);
             currency.setSymbol(symbol);
         }
         currencyRepository.save(currency);

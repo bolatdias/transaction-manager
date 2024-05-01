@@ -23,6 +23,9 @@ public class Transaction {
     private Currency currency;
 
     private Long accountFrom;
+
+
+
     private Long accountTo;
     private BigDecimal sum;
     @Enumerated(EnumType.STRING)
@@ -34,5 +37,4 @@ public class Transaction {
     @JoinColumn(name = "limit_id", nullable = false)
     private Limit limit;
 
-    private boolean limitExceeded;
 }

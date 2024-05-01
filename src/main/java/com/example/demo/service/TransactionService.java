@@ -4,21 +4,20 @@ package com.example.demo.service;
 import com.example.demo.mapper.TransactionMapper;
 import com.example.demo.model.Currency;
 import com.example.demo.model.Limit;
+import com.example.demo.model.LimitType;
 import com.example.demo.model.Transaction;
-import com.example.demo.payload.PagedResponse;
 import com.example.demo.payload.TransactionRequestDTO;
 import com.example.demo.payload.TransactionResponseDTO;
 import com.example.demo.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -28,56 +27,94 @@ public class TransactionService {
 
     private final static Logger logger = Logger.getLogger(TransactionService.class.getName());
     private final TransactionRepository transactionRepository;
-    private final TransactionMapper transactionMapper;
     private final LimitService limitService;
 
     @Transactional
     public void addTransaction(TransactionRequestDTO requestDTO, Currency currency) {
-        Transaction transaction = transactionMapper.convertDTOtoModel(requestDTO);
+        Transaction transaction = TransactionMapper.INSTANCE.convertDTOtoModel(requestDTO);
         transaction.setCurrency(currency);
 
+        Limit limit = limitService.getLimit(requestDTO.getType(), requestDTO.getDatetime());
 
-        BigDecimal rate;
-        if (currency.getExchangeDate().getDayOfMonth() == LocalDateTime.now().getDayOfMonth()) {
-            rate = currency.getCloseExchange();
-        } else {
-            rate = currency.getPreviousCloseExchange();
-        }
-
-        Limit limit = limitService.getLastLimit(requestDTO.getType());
-
-        BigDecimal sum = requestDTO.getSum().divide(rate, 2);
-        BigDecimal remainValue = limit.getRemainValue().subtract(sum);
-        limit.setRemainValue(remainValue);
-
-        transaction.setLimitExceeded(remainValue.compareTo(BigDecimal.ZERO) < 0);
-
-        limitService.saveLimit(limit);
         transaction.setLimit(limit);
         transactionRepository.save(transaction);
-
     }
 
 
-    public PagedResponse<TransactionResponseDTO> getTransactions(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Transaction> transactions = transactionRepository.findAll(pageable);
+    public List<TransactionResponseDTO> getExceededTransactions() {
+        List<TransactionResponseDTO> responseDTOS = new ArrayList<>();
+        for (LimitType limitType : LimitType.values()) {
+            responseDTOS.addAll(getExceededTransactionsByType(limitType));
+        }
+        return responseDTOS;
+    }
 
-        List<TransactionResponseDTO> list = new ArrayList<>();
+    public List<TransactionResponseDTO> getExceededTransactionsByType(LimitType limitType) {
+        List<TransactionResponseDTO> responseDTOs = new ArrayList<>();
 
-        for (Transaction transaction : transactions.getContent()) {
-            TransactionResponseDTO dto = transactionMapper.convertModelToDTO(transaction);
-            list.add(dto);
+        List<Transaction> list = transactionRepository.findAllByLimitType(limitType, Sort.by("datetime"));
+        if(list.isEmpty()) {
+            return responseDTOs;
+        }
+        OffsetDateTime now = OffsetDateTime.now();
+
+        HashMap<Limit, OffsetDateTime> limitsLastRefreshTime = new HashMap<>();
+        HashMap<Currency, BigDecimal> currenciesWithRate = new HashMap<>();
+
+
+        BigDecimal value = list.get(0).getLimit().getLimitValue();
+        BigDecimal remainValue = new BigDecimal(String.valueOf(value));
+
+
+        for (Transaction transaction : list) {
+            Limit limit = transaction.getLimit();
+
+            limitsLastRefreshTime.put(limit, limit.getCreatedDate());
+
+            Currency currency = transaction.getCurrency();
+
+            if (!currenciesWithRate.containsKey(currency)) {
+                BigDecimal rate = getExchangeRate(now, currency);
+                currenciesWithRate.put(currency, rate);
+            }
+
+
+            BigDecimal rate = currenciesWithRate.get(currency);
+
+            BigDecimal currValue = limit.getLimitValue();
+            if (value.compareTo(currValue) != 0) {
+
+                remainValue = remainValue.add(currValue.subtract(value));
+                value = currValue;
+            }
+
+            OffsetDateTime lastRefreshedTime = limitsLastRefreshTime.get(limit);
+            if (limitService.validateByMonth(limit, lastRefreshedTime, now)) {
+                limitsLastRefreshTime.put(limit, now);
+                remainValue = remainValue.add(currValue);
+            }
+
+            remainValue = remainValue.subtract(transaction.getSum().divide(rate, 2, BigDecimal.ROUND_HALF_UP));
+
+
+            if (remainValue.compareTo(BigDecimal.ZERO) < 0) {
+                responseDTOs.add(TransactionMapper.INSTANCE.convertModelToDTO(transaction));
+            }
+
+            logger.info(value + " " + currValue + " " + remainValue + " " + rate);
+
         }
 
-        PagedResponse<TransactionResponseDTO> pagedResponse = new PagedResponse<>();
-        pagedResponse.setTotalPages(transactions.getTotalPages());
-        pagedResponse.setTotalElements(transactions.getTotalElements());
-        pagedResponse.setPage(page);
-        pagedResponse.setSize(size);
-        pagedResponse.setLast(transactions.isLast());
-        pagedResponse.setContent(list);
-        return pagedResponse;
+        return responseDTOs;
     }
+
+    private BigDecimal getExchangeRate(OffsetDateTime now, Currency currency) {
+        if (now.getDayOfYear() == currency.getExchangeDate().getDayOfYear()) {
+            return currency.getCloseExchange();
+        } else {
+            return currency.getPreviousCloseExchange();
+        }
+    }
+
 
 }

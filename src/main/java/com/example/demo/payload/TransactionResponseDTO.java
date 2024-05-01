@@ -35,4 +35,5 @@ public class TransactionResponseDTO {
     private OffsetDateTime limitDatetime;
     @JsonProperty("limit_currency_shortname")
     private String limitCurrencyShortname;
+
 }
