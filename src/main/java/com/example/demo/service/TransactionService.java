@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -40,16 +39,16 @@ public class TransactionService {
     }
 
 
-    public List<TransactionResponseDTO> getExceededTransactions() {
+    public List<TransactionResponseDTO> getExceeded() {
         List<TransactionResponseDTO> responseDTOS = new ArrayList<>();
         for (LimitType limitType : LimitType.values()) {
-            responseDTOS.addAll(getExceededTransactionsByType(limitType));
+            responseDTOS.addAll(getExceededByType(limitType));
         }
         return responseDTOS;
     }
 
 
-    public List<TransactionResponseDTO> getExceededTransactionsByType(LimitType limitType) {
+    public List<TransactionResponseDTO> getExceededByType(LimitType limitType) {
         List<TransactionResponseDTO> responseDTOs = new ArrayList<>();
         List<Transaction> list = transactionRepository.findAllByLimitType(limitType, Sort.by("datetime"));
 
@@ -57,27 +56,16 @@ public class TransactionService {
             return responseDTOs;
         }
 
-        OffsetDateTime now = OffsetDateTime.now();
-        HashMap<Limit, OffsetDateTime> limitsLastRefreshTime = new HashMap<>();
-        HashMap<Currency, BigDecimal> currenciesWithRate = new HashMap<>();
-
-
         BigDecimal value = list.get(0).getLimit().getLimitValue();
         BigDecimal remainValue = new BigDecimal(String.valueOf(value));
+        OffsetDateTime lastDate = list.get(0).getDatetime();
 
         for (Transaction transaction : list) {
             Limit limit = transaction.getLimit();
-            limitsLastRefreshTime.put(limit, limit.getCreatedDate());
-
             Currency currency = transaction.getCurrency();
 
-            if (!currenciesWithRate.containsKey(currency)) {
-                BigDecimal rate = getExchangeRate(now, currency);
-                currenciesWithRate.put(currency, rate);
-            }
 
-
-            BigDecimal rate = currenciesWithRate.get(currency);
+            BigDecimal rate = getExchangeRate(OffsetDateTime.now(), currency);
             BigDecimal currValue = limit.getLimitValue();
 
             if (value.compareTo(currValue) != 0) {
@@ -85,27 +73,32 @@ public class TransactionService {
                 value = currValue;
             }
 
-            OffsetDateTime lastRefreshedTime = limitsLastRefreshTime.get(limit);
 
-//            if (!limitService.isMonthEqual(lastRefreshedTime, now)) {
-//                limitsLastRefreshTime.put(limit, now);
-//                remainValue = currValue;
-//            }
+            OffsetDateTime datetime = transaction.getDatetime();
+            if (refreshRemain(datetime, lastDate)) {
+                lastDate = datetime;
+                remainValue = value;
+            }
+
+
 
             remainValue = remainValue.subtract(transaction.getSum().divide(rate, 2, BigDecimal.ROUND_HALF_DOWN));
 
-
+            logger.info("Date: " + datetime + "remain value: " + remainValue);
             if (remainValue.compareTo(BigDecimal.ZERO) < 0) {
                 responseDTOs.add(TransactionMapper.INSTANCE.convertModelToDTO(transaction));
             }
 
 
-            logger.info(currValue + " " + value + " " + remainValue);
-
         }
 
         return responseDTOs;
     }
+
+    private boolean refreshRemain(OffsetDateTime datetime, OffsetDateTime lastDate) {
+        return datetime.getMonth() != lastDate.getMonth() || datetime.getYear() != lastDate.getYear();
+    }
+
 
     private BigDecimal getExchangeRate(OffsetDateTime now, Currency currency) {
         if (now.getDayOfYear() == currency.getExchangeDate().getDayOfYear()) {

@@ -3,6 +3,8 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -25,8 +27,6 @@ public class Transaction {
 
     private Long accountTo;
     private BigDecimal sum;
-    @Enumerated(EnumType.STRING)
-    private LimitType expenseCategory;
     private OffsetDateTime datetime;
 
 

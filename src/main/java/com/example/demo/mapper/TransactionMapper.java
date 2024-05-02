@@ -18,21 +18,16 @@ public interface TransactionMapper {
             @Mapping(source = "accountFrom", target = "accountFrom"),
             @Mapping(source = "accountTo", target = "accountTo"),
             @Mapping(source = "sum", target = "sum"),
-            @Mapping(source = "type", target = "expenseCategory"),
             @Mapping(source = "datetime", target = "datetime")
     })
     Transaction convertDTOtoModel(TransactionRequestDTO requestDTO);
 
     @Mappings({
-            @Mapping(source = "accountFrom", target = "accountFrom"),
-            @Mapping(source = "accountTo", target = "accountTo"),
             @Mapping(target = "currencyShortname", expression = "java(transaction.getCurrency().getSymbol())"),
-            @Mapping(source = "sum", target = "sum"),
-            @Mapping(source = "expenseCategory", target = "expenseCategory"),
-            @Mapping(source = "datetime", target = "datetime"),
             @Mapping(target = "limitSum", source = "limit.limitValue"),
             @Mapping(target = "limitDatetime", source = "datetime"),
-            @Mapping(target = "limitCurrencyShortname", constant = AppConst.BASE_CURRENCY)
+            @Mapping(target = "limitCurrencyShortname", constant = AppConst.BASE_CURRENCY),
+            @Mapping(source = "limit.type", target ="type")
     })
     TransactionResponseDTO convertModelToDTO(Transaction transaction);
 }

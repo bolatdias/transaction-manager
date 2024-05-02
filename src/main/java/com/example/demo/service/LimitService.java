@@ -32,14 +32,8 @@ public class LimitService {
     }
 
 
-    public boolean isMonthEqual(OffsetDateTime time, OffsetDateTime now) {
-        if (time.getMonth() != now.getMonth()) {
-            return false;
-        } else if (time.getYear() != now.getYear()) {
-            return false;
-        } else {
-            return true;
-        }
+    public boolean isMonthEqual(OffsetDateTime time, OffsetDateTime time2) {
+        return time.getMonth() == time2.getMonth() && time.getYear() == time2.getYear();
     }
 
 }

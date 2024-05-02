@@ -41,6 +41,6 @@ public class TransactionController {
     @Operation(summary = "Get All Limit Exceeded Transactions")
     @GetMapping("/transaction")
     public ResponseEntity<List<TransactionResponseDTO>> getTransactions() {
-        return ResponseEntity.ok(transactionService.getExceededTransactions());
+        return ResponseEntity.ok(transactionService.getExceeded());
     }
 }

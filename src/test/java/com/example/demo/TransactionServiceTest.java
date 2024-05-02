@@ -53,7 +53,6 @@ public class TransactionServiceTest {
         transaction.setAccountFrom(12345L);
         transaction.setAccountTo(54321L);
         transaction.setSum(new BigDecimal("1500"));
-        transaction.setExpenseCategory(LimitType.SERVICE);
         transaction.setDatetime(OffsetDateTime.parse(datetimeStr));
         transaction.setLimit(limit);
         return transaction;
@@ -65,7 +64,6 @@ public class TransactionServiceTest {
         transaction.setAccountFrom(12345L);
         transaction.setAccountTo(54321L);
         transaction.setSum(sum);
-        transaction.setExpenseCategory(LimitType.SERVICE);
         transaction.setDatetime(OffsetDateTime.parse(datetimeStr));
         transaction.setLimit(limit);
         return transaction;
@@ -125,7 +123,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testGetExceededTransactions() {
+    public void testGetExceeded() {
         // Mock data for Currency
         Currency currency = new Currency();
         currency.setId(1L);
@@ -148,13 +146,12 @@ public class TransactionServiceTest {
         transaction1.setAccountFrom(12345L);
         transaction1.setAccountTo(54321L);
         transaction1.setSum(new BigDecimal("1500"));
-        transaction1.setExpenseCategory(LimitType.SERVICE);
         transaction1.setDatetime(OffsetDateTime.now());
         transaction1.setLimit(limit);
 
 
         when(transactionRepository.findAllByLimitType(any(), any(Sort.class))).thenReturn(Collections.singletonList(transaction1));
-        List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
+        List<TransactionResponseDTO> result = transactionService.getExceededByType(LimitType.SERVICE);
 
 
 
@@ -165,7 +162,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testGetExceededTransactions_withDateTimes() {
+    public void testGetExceeded_withDateTimes() {
 
         Currency currency = new Currency();
         currency.setId(1L);
@@ -189,7 +186,7 @@ public class TransactionServiceTest {
         List<Transaction> sorted = Arrays.asList(transaction1, transaction2, transaction3);
         when(transactionRepository.findAllByLimitType(any(), any(Sort.class))).thenReturn(sorted);
 
-        List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
+        List<TransactionResponseDTO> result = transactionService.getExceededByType(LimitType.SERVICE);
 
 
 
@@ -199,7 +196,7 @@ public class TransactionServiceTest {
 
 
     @Test
-    public void testGetExceededTransactions_withCase1() {
+    public void testGetExceeded_withCase1() {
         // Mock data for Currency
         Currency currency = new Currency();
         currency.setId(1L);
@@ -228,7 +225,7 @@ public class TransactionServiceTest {
 
 
 
-        List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
+        List<TransactionResponseDTO> result = transactionService.getExceededByType(LimitType.SERVICE);
 
 
 
@@ -244,7 +241,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testGetExceededTransactions_withCase2() {
+    public void testGetExceeded_withCase2() {
         Currency currency = new Currency();
         currency.setId(1L);
         currency.setSymbol("USD");
@@ -265,14 +262,14 @@ public class TransactionServiceTest {
 
         when(transactionRepository.findAllByLimitType(any(), any(Sort.class))).thenReturn(sortedList);
 
-        List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
+        List<TransactionResponseDTO> result = transactionService.getExceededByType(LimitType.SERVICE);
         assertEquals(2, result.size());
         assertEquals("2022-02-11T00:00Z", result.get(0).getDatetime().toString());
         assertEquals("2022-02-12T00:00Z", result.get(1).getDatetime().toString());
     }
 
     @Test
-    public void testGetExceededTransactions_withCase1KZT() {
+    public void testGetExceeded_withCase1KZT() {
         // Mock data for Currency
         Currency currency = new Currency();
         currency.setId(1L);
@@ -298,7 +295,7 @@ public class TransactionServiceTest {
 
         when(transactionRepository.findAllByLimitType(any(), any(Sort.class))).thenReturn(sortedList);
 
-        List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
+        List<TransactionResponseDTO> result = transactionService.getExceededByType(LimitType.SERVICE);
 
         // Assertions
         assertEquals(2, result.size()); // Assuming two transactions exceed the limit
@@ -307,7 +304,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testGetExceededTransactions_withMounths() {
+    public void testGetExceeded_withMounths() {
         Currency currency = new Currency();
         currency.setId(1L);
         currency.setSymbol("USD");
@@ -328,7 +325,7 @@ public class TransactionServiceTest {
                 transaction1, transaction2, transaction3, transaction4);
 
         when(transactionRepository.findAllByLimitType(any(), any(Sort.class))).thenReturn(sortedList);
-        List<TransactionResponseDTO> result = transactionService.getExceededTransactionsByType(LimitType.SERVICE);
+        List<TransactionResponseDTO> result = transactionService.getExceededByType(LimitType.SERVICE);
 
 
         // Assertions
@@ -336,4 +333,33 @@ public class TransactionServiceTest {
         assertEquals("2022-01-03T00:00Z", result.get(0).getDatetime().toString()); // First transaction should exceed the limit// Second transaction should exceed the limit
     }
 
+    @Test
+    public void testGetExceeded_withMounths2() {
+        Currency currency = new Currency();
+        currency.setId(1L);
+        currency.setSymbol("USD");
+        currency.setCloseExchange(new BigDecimal("1.0"));
+        currency.setPreviousCloseExchange(new BigDecimal("0.9"));
+        currency.setExchangeDate(OffsetDateTime.now());
+
+        Limit limit1 = createLimit(new BigDecimal("1000"), "2022-01-01T00:00:00Z");
+
+        // Mock data for Transactions
+        Transaction transaction1 = createTransaction(1L,currency, limit1, "2022-01-02T00:00:00Z", new BigDecimal("500"));
+        Transaction transaction2 = createTransaction(2L,currency, limit1, "2022-01-03T00:00:00Z", new BigDecimal("600"));
+        Transaction transaction3 = createTransaction(3L,currency, limit1, "2022-02-11T00:00:00Z", new BigDecimal("400"));
+        Transaction transaction4 = createTransaction(4L,currency, limit1, "2023-02-12T00:00:00Z", new BigDecimal("700"));
+
+
+        List<Transaction> sortedList = Arrays.asList(
+                transaction1, transaction2, transaction3, transaction4);
+
+        when(transactionRepository.findAllByLimitType(any(), any(Sort.class))).thenReturn(sortedList);
+        List<TransactionResponseDTO> result = transactionService.getExceededByType(LimitType.SERVICE);
+
+
+        // Assertions
+        assertEquals(1, result.size()); // Assuming two transactions exceed the limit
+        assertEquals("2022-01-03T00:00Z", result.get(0).getDatetime().toString()); // First transaction should exceed the limit// Second transaction should exceed the limit
+    }
 }

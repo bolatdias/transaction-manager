@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.CurrencyMapper;
 import com.example.demo.model.Currency;
 import com.example.demo.payload.CurrencyConversionDTO;
@@ -42,6 +43,7 @@ public class CurrencyService implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+
         parseCurrencyApi(AppConst.OTHER_CURRENCY);
     }
 
@@ -52,7 +54,7 @@ public class CurrencyService implements ApplicationRunner {
             String symbol = AppConst.BASE_CURRENCY + "/" + parseString;
             CurrencyConversionDTO currencyDto = getExchangeRateApi(symbol);
 
-            insertCurrency(currencyDto, symbol);
+            insertCurrency(currencyDto, parseString);
         }
     }
 
@@ -73,12 +75,16 @@ public class CurrencyService implements ApplicationRunner {
 
 
     private CurrencyConversionDTO getExchangeRateApi(String symbol) {
-        return currencyProxy.getExchangeRate(apiKey, symbol);
+        try {
+            CurrencyConversionDTO response = currencyProxy.getExchangeRate(apiKey, symbol);
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
     public Currency getCurrencyBySymbol(String s) {
-
         return currencyRepository.findBySymbol(s).orElse(null);
     }
 

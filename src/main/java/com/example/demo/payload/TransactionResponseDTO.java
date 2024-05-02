@@ -20,7 +20,7 @@ public class TransactionResponseDTO {
     private String currencyShortname;
     private BigDecimal sum;
     @JsonProperty("expense_category")
-    private LimitType expenseCategory;
+    private LimitType type;
     @JsonProperty("datetime")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ssXXX")
     private OffsetDateTime datetime;

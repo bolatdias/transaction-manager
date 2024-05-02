@@ -30,27 +30,30 @@ public class TransactionMapperTest {
         requestDTO.setDatetime(OffsetDateTime.now());
 
         Transaction transaction = mapper.convertDTOtoModel(requestDTO);
+        Limit limit = new Limit();
+        limit.setType(LimitType.SERVICE);
+        transaction.setLimit(limit);
+
 
         assertEquals(requestDTO.getAccountFrom(), transaction.getAccountFrom());
         assertEquals(requestDTO.getAccountTo(), transaction.getAccountTo());
         assertEquals(requestDTO.getSum(), transaction.getSum());
-        assertEquals(requestDTO.getType(), transaction.getExpenseCategory());
         assertEquals(requestDTO.getDatetime(), transaction.getDatetime());
     }
 
     @Test
     public void testConvertModelToDTO() {
-        Currency currency=new Currency();
+        Currency currency = new Currency();
         currency.setSymbol("KZT");
 
-        Limit limit=new Limit();
+        Limit limit = new Limit();
         limit.setLimitValue(AppConst.LIMIT_VALUE);
+        limit.setType(LimitType.SERVICE);
 
         Transaction transaction = new Transaction();
         transaction.setAccountFrom(123456L);
         transaction.setAccountTo(654321L);
         transaction.setSum(BigDecimal.valueOf(100.0));
-        transaction.setExpenseCategory(LimitType.SERVICE);
         transaction.setCurrency(currency);
         transaction.setDatetime(OffsetDateTime.now());
         transaction.setLimit(limit);
@@ -61,13 +64,11 @@ public class TransactionMapperTest {
         assertEquals(transaction.getAccountTo(), responseDTO.getAccountTo());
         assertEquals(transaction.getCurrency().getSymbol(), responseDTO.getCurrencyShortname());
         assertEquals(transaction.getSum(), responseDTO.getSum());
-        assertEquals(transaction.getExpenseCategory(), responseDTO.getExpenseCategory());
         assertEquals(transaction.getDatetime(), responseDTO.getDatetime());
         assertEquals(transaction.getLimit().getLimitValue(), responseDTO.getLimitSum());
         assertEquals(transaction.getDatetime(), responseDTO.getLimitDatetime());
         assertEquals(AppConst.BASE_CURRENCY, responseDTO.getLimitCurrencyShortname());
     }
-
 
 
 }
