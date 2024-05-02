@@ -42,7 +42,7 @@ Before running this application, ensure that you have the following installed:
 4. **Run the application:**
 
    ```bash
-   java -jar target/spring-boot-app.jar
+   java -jar target/demo-0.0.1-SNAPSHOT.jar
    ```
 
    The application will start running on `http://localhost:8080`.
