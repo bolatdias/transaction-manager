@@ -1,88 +1,110 @@
 package com.example.demo.service;
 
 
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.CurrencyMapper;
 import com.example.demo.model.Currency;
 import com.example.demo.payload.CurrencyConversionDTO;
+import com.example.demo.payload.CurrencyDTO;
+import com.example.demo.payload.PagedResponse;
 import com.example.demo.proxy.CurrencyProxy;
 import com.example.demo.repository.CurrencyRepository;
 import com.example.demo.utils.AppConst;
+import com.example.demo.utils.HolidayChecker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class CurrencyService {
+public class CurrencyService implements ApplicationRunner {
     @Value("${app.service.apiKey}")
     private String apiKey;
 
     private final CurrencyProxy currencyProxy;
     private final CurrencyRepository currencyRepository;
-    private final CurrencyMapper currencyMapper;
 
-
-    public void parseCurrencyApi() {
-        HashMap<String, Currency> currHashMap = initHashMap();
-        List<String> parseStrings = AppConst.OTHER_CURRENCY;
-
-
-        for (String parseString : parseStrings) {
-            String symbol = AppConst.BASE_CURRENCY + "/" + parseString;
-            CurrencyConversionDTO currencyDTO = getExchangeRateApi(symbol);
-
-
-            insertCurrency(currHashMap, parseString, currencyDTO);
+    @Scheduled(cron = "0 0 0 * * *")
+    public void parseCurrencyApiIfNotHolidayOrWeekend() {
+        if (HolidayChecker.isHoliday()) {
+            parseCurrencyApi(AppConst.OTHER_CURRENCY);
         }
     }
 
-    public void insertCurrency(HashMap<String, Currency> currHashMap, String symbol, CurrencyConversionDTO currencyDTO) {
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
 
-        Currency currency;
+        parseCurrencyApi(AppConst.OTHER_CURRENCY);
+    }
 
-        if (currHashMap.containsKey(symbol)) {
-            currency = currHashMap.get(symbol);
-            currency.setPreviousCloseExchange(currency.getCloseExchange());
-            currency.setCloseExchange(currency.getCloseExchange());
-            currency.setExchangeDate(OffsetDateTime.now());
 
-        } else {
-            currency = currencyMapper.conversionDTOToCurrency(currencyDTO);
-            currency.setSymbol(symbol);
+    @Transactional
+    public void parseCurrencyApi(Set<String> parseStrings) {
+        for (String parseString : parseStrings) {
+            String symbol = AppConst.BASE_CURRENCY + "/" + parseString;
+            CurrencyConversionDTO currencyDto = getExchangeRateApi(symbol);
+
+            insertCurrency(currencyDto, parseString);
         }
+    }
+
+    public void insertCurrency(CurrencyConversionDTO currencyDTO, String symbol) {
+        Currency currency = getCurrencyBySymbol(symbol);
+
+        if (currency == null) {
+            currency = CurrencyMapper.INSTANCE.conversionDTOToCurrency(currencyDTO);
+            currency.setPreviousCloseExchange(currencyDTO.getRate());
+        } else {
+            currency.setPreviousCloseExchange(currency.getCloseExchange());
+            currency.setCloseExchange(currencyDTO.getRate());
+        }
+
         currencyRepository.save(currency);
 
     }
 
 
-    private HashMap<String, Currency> initHashMap() {
-        HashMap<String, Currency> currenciesWithDate = new HashMap<>();
-        List<Currency> currencyList = currencyRepository.findAll();
-        for (Currency currency : currencyList) {
-            currenciesWithDate.put(currency.getSymbol(), currency);
-        }
-        return currenciesWithDate;
-    }
-
     private CurrencyConversionDTO getExchangeRateApi(String symbol) {
-        return currencyProxy.getExchangeRate(apiKey, symbol);
+        try {
+            CurrencyConversionDTO response = currencyProxy.getExchangeRate(apiKey, symbol);
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
     public Currency getCurrencyBySymbol(String s) {
-        Currency currency = currencyRepository.findBySymbol(s).orElseThrow(
-                () -> new RuntimeException("Currency not found")
-        );
-
-        return currency;
+        return currencyRepository.findBySymbol(s).orElse(null);
     }
 
+
+    public PagedResponse<CurrencyDTO> getAll(Pageable pageable) {
+        PagedResponse<CurrencyDTO> response = new PagedResponse<>();
+        Page<Currency> page = currencyRepository.findAll(pageable);
+
+        List<CurrencyDTO> DTOlist = new ArrayList<>();
+        for (Currency currency : page.getContent()) {
+            DTOlist.add(CurrencyMapper.INSTANCE.conversionCurrencyToDTO(currency));
+        }
+
+        response.setPage(page.getNumber() + 1);
+        response.setSize(page.getSize());
+        response.setLast(page.isLast());
+        response.setTotalElements(page.getTotalElements());
+        response.setTotalPages(page.getTotalPages());
+        response.setContent(DTOlist);
+        return response;
+    }
 }
 

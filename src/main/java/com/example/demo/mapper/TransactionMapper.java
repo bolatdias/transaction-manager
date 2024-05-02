@@ -4,37 +4,30 @@ import com.example.demo.model.Transaction;
 import com.example.demo.payload.TransactionRequestDTO;
 import com.example.demo.payload.TransactionResponseDTO;
 import com.example.demo.utils.AppConst;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.factory.Mappers;
 
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
+@Mapper
+public interface TransactionMapper {
 
-@Component
-public class TransactionMapper {
+    TransactionMapper INSTANCE = Mappers.getMapper(TransactionMapper.class);
 
-    public Transaction convertDTOtoModel(TransactionRequestDTO requestDTO) {
-        Transaction transaction = new Transaction();
+    @Mappings({
+            @Mapping(source = "accountFrom", target = "accountFrom"),
+            @Mapping(source = "accountTo", target = "accountTo"),
+            @Mapping(source = "sum", target = "sum"),
+            @Mapping(source = "datetime", target = "datetime")
+    })
+    Transaction convertDTOtoModel(TransactionRequestDTO requestDTO);
 
-        transaction.setAccountFrom(requestDTO.getAccountFrom());
-        transaction.setAccountTo(requestDTO.getAccountTo());
-        transaction.setSum(requestDTO.getSum());
-        transaction.setExpenseCategory(requestDTO.getType());
-        transaction.setDatetime(requestDTO.getDatetime());
-        return transaction;
-    }
-
-    public TransactionResponseDTO convertModelToDTO(Transaction transaction) {
-        TransactionResponseDTO responseDTO = new TransactionResponseDTO();
-        responseDTO.setAccountFrom(transaction.getAccountFrom());
-        responseDTO.setAccountTo(transaction.getAccountTo());
-        responseDTO.setCurrencyShortname(transaction.getCurrency().getSymbol());
-        responseDTO.setSum(transaction.getSum());
-        responseDTO.setExpenseCategory(transaction.getExpenseCategory());
-        responseDTO.setDatetime(transaction.getDatetime());
-
-        responseDTO.setLimitSum(transaction.getLimit().getLimitValue());
-        responseDTO.setLimitDatetime(transaction.getDatetime());
-        responseDTO.setLimitCurrencyShortname(AppConst.BASE_CURRENCY);
-        return responseDTO;
-    }
+    @Mappings({
+            @Mapping(target = "currencyShortname", expression = "java(transaction.getCurrency().getSymbol())"),
+            @Mapping(target = "limitSum", source = "limit.limitValue"),
+            @Mapping(target = "limitDatetime", source = "datetime"),
+            @Mapping(target = "limitCurrencyShortname", constant = AppConst.BASE_CURRENCY),
+            @Mapping(source = "limit.type", target ="type")
+    })
+    TransactionResponseDTO convertModelToDTO(Transaction transaction);
 }

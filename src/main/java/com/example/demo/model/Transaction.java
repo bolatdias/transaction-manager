@@ -3,12 +3,11 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.util.Date;
 
 
 @Entity
@@ -23,10 +22,11 @@ public class Transaction {
     private Currency currency;
 
     private Long accountFrom;
+
+
+
     private Long accountTo;
     private BigDecimal sum;
-    @Enumerated(EnumType.STRING)
-    private LimitType expenseCategory;
     private OffsetDateTime datetime;
 
 
@@ -34,5 +34,4 @@ public class Transaction {
     @JoinColumn(name = "limit_id", nullable = false)
     private Limit limit;
 
-    private boolean limitExceeded;
 }

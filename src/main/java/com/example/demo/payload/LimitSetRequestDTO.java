@@ -7,7 +7,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class LimitSetRequest {
+public class LimitSetRequestDTO {
     private BigDecimal limit;
     private LimitType type;
 }

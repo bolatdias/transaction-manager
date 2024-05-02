@@ -1,0 +1,2 @@
+INSERT INTO Limits(limit_value, created_date, type) VALUES (1000, "1970-01-01 00:00:00.000000", "SERVICE");
+INSERT INTO Limits(limit_value, created_date, type) VALUES (1000, "1970-01-01 00:00:00.000000", "PRODUCT");

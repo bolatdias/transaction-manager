@@ -6,10 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.util.Date;
 
 
 @Data
@@ -23,7 +20,7 @@ public class TransactionResponseDTO {
     private String currencyShortname;
     private BigDecimal sum;
     @JsonProperty("expense_category")
-    private LimitType expenseCategory;
+    private LimitType type;
     @JsonProperty("datetime")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ssXXX")
     private OffsetDateTime datetime;
@@ -35,4 +32,5 @@ public class TransactionResponseDTO {
     private OffsetDateTime limitDatetime;
     @JsonProperty("limit_currency_shortname")
     private String limitCurrencyShortname;
+
 }

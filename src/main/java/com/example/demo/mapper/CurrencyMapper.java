@@ -2,21 +2,22 @@ package com.example.demo.mapper;
 
 import com.example.demo.model.Currency;
 import com.example.demo.payload.CurrencyConversionDTO;
-import org.springframework.stereotype.Component;
+import com.example.demo.payload.CurrencyDTO;
+import com.example.demo.utils.AppConst;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.util.Date;
+@Mapper
+public interface CurrencyMapper {
 
+    CurrencyMapper INSTANCE = Mappers.getMapper(CurrencyMapper.class);
 
-@Component
-public class CurrencyMapper {
-    public Currency conversionDTOToCurrency(CurrencyConversionDTO currencyDTO) {
-        Currency currency = new Currency();
-        currency.setSymbol(currencyDTO.getSymbol());
-        currency.setExchangeDate(OffsetDateTime.now());
-        currency.setCloseExchange(currencyDTO.getRate());
-        return currency;
-    }
+    @Mapping(source = "symbol", target = "symbol")
+    @Mapping(source = "rate", target = "closeExchange")
+    Currency conversionDTOToCurrency(CurrencyConversionDTO currencyDTO);
+
+    @Mapping(target = "baseSymbol", expression = "java(com.example.demo.utils.AppConst.BASE_CURRENCY)")
+    CurrencyDTO conversionCurrencyToDTO(Currency currency);
+
 }
