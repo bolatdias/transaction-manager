@@ -1,6 +1,6 @@
 # Transaction Spring Boot application!
 
-Welcome to our Spring Boot application! This application serves made for test task
+This app integrates with the twelvedata.com API to fetch daily exchange rates, manages user transactions including dates, amounts, and currencies, and monitors monthly transaction limits, sending notifications if exceeded.
 
 ## Overview
 
@@ -24,7 +24,7 @@ Before running this application, ensure that you have the following installed:
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/bolatdias/test.git
+   git clone https://github.com/bolatdias/transaction-manager
    ```
 
 2. **Navigate to the project directory:**
